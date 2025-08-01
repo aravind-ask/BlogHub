@@ -26,13 +26,13 @@ export class UserController {
       .json(response);
   }
 
-  async getSavedBlogs(req: AuthRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const response = await this.userService.getSavedBlogs(id);
-    res
-      .status(response.success ? HttpStatus.OK : HttpStatus.NOT_FOUND)
-      .json(response);
-  }
+  // async getSavedBlogs(req: AuthRequest, res: Response): Promise<void> {
+  //   const { id } = req.params;
+  //   const response = await this.userService.getSavedBlogs(id);
+  //   res
+  //     .status(response.success ? HttpStatus.OK : HttpStatus.NOT_FOUND)
+  //     .json(response);
+  // }
 
   async saveBlog(req: AuthRequest, res: Response): Promise<void> {
     const { blogId } = req.params;

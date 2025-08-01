@@ -20,7 +20,7 @@ const Profile = () => {
   const { profile, isLoading, error } = useAppSelector((state) => state.user);
   const { user } = useAppSelector((state) => state.auth);
   const [userBlogs, setUserBlogs] = useState<Blog[]>([]);
-  const [savedBlogs, setSavedBlogs] = useState<Blog[]>([]);
+  const [savedBlogs, setSavedBlogs] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -29,6 +29,7 @@ const Profile = () => {
       try {
         const profileResponse = await userService.getProfile(id);
         if (profileResponse.success && profileResponse.data) {
+          setSavedBlogs(profileResponse.data.savedBlogs || []);
           dispatch(setProfile(profileResponse.data));
         } else {
           dispatch(
@@ -41,10 +42,6 @@ const Profile = () => {
           setUserBlogs(blogsResponse.data as Blog[]);
         }
 
-        const savedBlogsResponse = await userService.getSavedBlogs(id);
-        if (savedBlogsResponse.success && savedBlogsResponse.data) {
-          setSavedBlogs(savedBlogsResponse.data as Blog[]);
-        }
       } catch (err) {
         dispatch(setError("An error occurred"));
       } finally {

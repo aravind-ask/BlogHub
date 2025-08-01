@@ -4,6 +4,7 @@ import morgan from "morgan";
 import connectDB from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import blogRoutes from "./routes/blog.routes";
+import userRoutes from "./routes/user.routes";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { env } from "./config/env.config";
 
@@ -17,6 +18,7 @@ connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/users", userRoutes)
 
 app.use(errorMiddleware);
 

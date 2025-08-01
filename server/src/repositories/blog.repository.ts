@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
 import { BaseRepository } from "./base.repository";
-import BlogModel  from "../models/blog.model";
+import BlogModel from "../models/blog.model";
 import { Types } from "mongoose";
 import { IBlog } from "../interfaces/blog.interface";
 
@@ -44,6 +44,24 @@ export class BlogRepository extends BaseRepository<IBlog> {
         },
         { new: true }
       )
+      .exec();
+  }
+
+  async getUserBlogs(id: string): Promise<IBlog[]> {
+    return this.model
+      .find({ author: id })
+      .populate("author", "name")
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async getSavedBlogs(
+    userId: string
+  ): Promise<IBlog[]> {
+    return this.model
+      .find({ savedBy: userId })
+      .populate("author", "name")
+      .sort({ createdAt: -1 })
       .exec();
   }
 }

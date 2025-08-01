@@ -17,7 +17,7 @@ export class UserService {
 
   async getProfile(id: string): Promise<IResponse<IUser>> {
     try {
-      const user = await this.userRepository.findById(id);
+      const user = await this.userRepository.getProfile(id);
       if (!user) {
         return {
           success: false,
@@ -41,12 +41,7 @@ export class UserService {
 
   async getUserBlogs(id: string): Promise<IResponse<IBlog[]>> {
     try {
-      const blogs = await this.blogRepository
-        .findAll()
-        .where("author")
-        .equals(id)
-        .populate("author", "name email")
-        .exec();
+      const blogs = await this.blogRepository.getUserBlogs(id);
       return {
         success: true,
         message: "Blogs fetched successfully",
@@ -61,35 +56,30 @@ export class UserService {
     }
   }
 
-  async getSavedBlogs(id: string): Promise<IResponse<IBlog[]>> {
-    try {
-      const user = await this.userRepository.findById(id);
-      if (!user) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "User not found",
-        };
-      }
-      const blogs = await this.blogRepository
-        .findAll()
-        .where("_id")
-        .in(user.savedBlogs)
-        .populate("author", "name email")
-        .exec();
-      return {
-        success: true,
-        message: "Saved blogs fetched successfully",
-        data: blogs,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
-    }
-  }
+  // async getSavedBlogs(id: string): Promise<IResponse<IBlog[]>> {
+  //   try {
+  //     const user = await this.userRepository.findById(id);
+  //     if (!user) {
+  //       return {
+  //         success: false,
+  //         message: ErrorMessage.NOT_FOUND,
+  //         error: "User not found",
+  //       };
+  //     }
+  //     const blogs = await this.blogRepository.findAll();
+  //     return {
+  //       success: true,
+  //       message: "Saved blogs fetched successfully",
+  //       data: blogs,
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       message: ErrorMessage.SERVER_ERROR,
+  //       error: (error as Error).message,
+  //     };
+  //   }
+  // }
 
   async saveBlog(userId: string, blogId: string): Promise<IResponse<IUser>> {
     try {

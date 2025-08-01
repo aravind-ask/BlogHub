@@ -49,6 +49,30 @@ export class BlogService {
     }
   }
 
+  async getBlog(id: string): Promise<IResponse<IBlog>> {
+    try {
+      const blog = await this.blogRepository.findById(id);
+      if (!blog) {
+        return {
+          success: false,
+          message: ErrorMessage.NOT_FOUND,
+          error: "Blog not found",
+        };
+      }
+      return {
+        success: true,
+        message: "Blog fetched successfully",
+        data: blog,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: ErrorMessage.SERVER_ERROR,
+        error: (error as Error).message,
+      };
+    }
+  }
+
   async updateBlog(
     id: string,
     title: string,

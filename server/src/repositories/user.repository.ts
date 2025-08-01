@@ -12,6 +12,10 @@ export class UserRepository extends BaseRepository<IUser> {
     return this.model.findOne({ email }).exec();
   }
 
+  async getProfile(id: string): Promise<IUser | null> {
+    return this.model.findById(id).populate("savedBlogs").exec();
+  }
+
   async saveBlog(
     userId: string,
     blogId: Types.ObjectId

@@ -16,7 +16,9 @@ router.post(
   blogController.createBlog.bind(blogController) as RequestHandler
 );
 
-router.get("/", blogController.getBlogs.bind(blogController) as RequestHandler);
+router.get("/", blogController.getBlogs.bind(blogController));
+
+router.get("/:id", blogController.getBlog.bind(blogController));
 
 router.put(
   "/:id",

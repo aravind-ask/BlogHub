@@ -57,6 +57,14 @@ export class BlogController {
       .json(response);
   }
 
+  async getBlog(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const response = await this.blogService.getBlog(id);
+    res
+      .status(response.success ? HttpStatus.OK : HttpStatus.NOT_FOUND)
+      .json(response);
+  }
+
   async updateBlog(
     req: AuthRequest & { params: { id: string }; body: UpdateBlogRequestBody },
     res: Response

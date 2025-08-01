@@ -25,6 +25,10 @@ export const blogService = {
     const response = await api.put(`/blogs/${id}`, data);
     return response.data;
   },
+  deleteBlog: async (id: string): Promise<BlogResponse> => {
+    const response = await api.delete(`/blogs/${id}`);
+    return response.data;
+  },
   likeBlog: async (id: string): Promise<BlogResponse> => {
     const response = await api.post(`/blogs/${id}/like`);
     return response.data;

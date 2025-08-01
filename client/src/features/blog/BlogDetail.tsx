@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { setCurrentBlog, updateBlog, setLoading, setError } from "./blogSlice";
 import { blogService } from "../../services/blogService";
@@ -17,7 +17,7 @@ import {
   AvatarImage,
 } from "../../components/ui/avatar";
 import { Skeleton } from "../../components/ui/skeleton";
-import { Heart } from "lucide-react";
+import { Heart, Trash2 } from "lucide-react";
 
 const BlogDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,6 +81,23 @@ const BlogDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    try {
+      const response = await blogService.deleteBlog(id!);
+      if (response.success) {
+        navigate("/");
+      } else {
+        dispatch(setError(response.error || "Failed to delete blog"));
+      }
+    } catch (err) {
+      dispatch(setError("An error occurred"));
+    }
+  };
+
   if (isLoading) return <Skeleton className="w-full h-96" />;
   if (error) return <p className="text-red-500">{error}</p>;
   if (!currentBlog) return null;
@@ -107,6 +124,22 @@ const BlogDetail = () => {
               <Heart className="w-4 h-4 mr-2" />
               {currentBlog.likes.length} Likes
             </Button>
+            {user?._id === currentBlog.author._id && (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/edit-blog/${currentBlog._id}`}>Edit</Link>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </>
+            )}
           </div>
           <form onSubmit={handleComment} className="space-y-4">
             <Textarea
