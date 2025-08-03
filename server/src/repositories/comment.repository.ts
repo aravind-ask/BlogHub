@@ -29,4 +29,8 @@ export class CommentRepository extends BaseRepository<IComment> {
   public async countByBlog(blogId: string): Promise<number> {
     return this.model.countDocuments({ blog: blogId });
   }
+
+  async deleteById(commentId: string): Promise<void> {
+    await this.model.deleteOne({ _id: commentId }).exec();
+  }
 }

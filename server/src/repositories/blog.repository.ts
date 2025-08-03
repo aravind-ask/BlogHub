@@ -29,4 +29,8 @@ export class BlogRepository extends BaseRepository<IBlog> {
   public async countBlogs(): Promise<number> {
     return this.model.countDocuments().exec();
   }
+
+  async findById(id: string): Promise<IBlog | null> {
+    return this.model.findById(id).populate("author", "name").exec();
+  }
 }

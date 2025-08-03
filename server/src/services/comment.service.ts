@@ -33,11 +33,14 @@ export class CommentService {
         );
       }
 
-      const comment = await this.commentRepository.create({
+      let comment = await this.commentRepository.create({
         content,
         user: userId,
         blog: new Types.ObjectId(blogId),
       });
+
+      // Populate user field with name and avatar
+      comment = await comment.populate("user", "name avatar");
 
       return ResponseHandler.success(
         comment,
@@ -97,6 +100,49 @@ export class CommentService {
       return ResponseHandler.success(
         null,
         "Comments deleted successfully",
+        HttpStatus.OK
+      );
+    } catch (error) {
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteComment(
+    blogId: string,
+    commentId: string,
+    userId: string
+  ): Promise<IResponse<null>> {
+    try {
+      const comment = await this.commentRepository.findById(commentId);
+      if (!comment) {
+        return ResponseHandler.error(
+          "Comment not found",
+          "Comment not found",
+          HttpStatus.NOT_FOUND
+        );
+      }
+      if (comment.blog.toString() !== blogId) {
+        return ResponseHandler.error(
+          "Invalid blog ID",
+          "Comment does not belong to this blog",
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      if (comment.user.toString() !== userId) {
+        return ResponseHandler.error(
+          "Unauthorized",
+          "You are not authorized to delete this comment",
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+      await this.commentRepository.deleteById(commentId);
+      return ResponseHandler.success(
+        null,
+        "Comment deleted successfully",
         HttpStatus.OK
       );
     } catch (error) {

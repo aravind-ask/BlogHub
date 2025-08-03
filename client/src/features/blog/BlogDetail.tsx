@@ -73,7 +73,11 @@ const BlogDetail = () => {
     try {
       const response = await blogService.getComments(id, commentPage, 10);
       if (response.success && response.data) {
-        setComments((prev) => [...prev, ...(response.data as any)]);
+        if (commentPage === 1) {
+          setComments(response.data as any);
+        } else {
+          setComments((prev) => [...prev, ...(response.data as any)]);
+        }
         setHasMoreComments(response.hasMore ?? false);
         setCommentPage((prev) => prev + 1);
       } else {
@@ -130,7 +134,7 @@ const BlogDetail = () => {
     try {
       const response = await blogService.commentBlog(id!, { content: comment });
       if (response.success) {
-        setComments((prev) => [...(response.data as any), ...prev]);
+        setComments((prev) => [response.data as any, ...prev]);
         setComment("");
       } else {
         dispatch(setError(getErrorMessage(response.error, response.status)));
@@ -149,6 +153,23 @@ const BlogDetail = () => {
       const response = await blogService.deleteBlog(id!);
       if (response.success) {
         navigate("/");
+      } else {
+        dispatch(setError(getErrorMessage(response.error, response.status)));
+      }
+    } catch (err: any) {
+      dispatch(setError(getErrorMessage(err.error || err.message, err.status)));
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    try {
+      const response = await blogService.deleteComment(currentBlog?._id, commentId);
+      if (response.success) {
+        setComments((prev) => prev.filter((c) => c._id !== commentId));
       } else {
         dispatch(setError(getErrorMessage(response.error, response.status)));
       }
@@ -253,7 +274,7 @@ const BlogDetail = () => {
                           : comment.user.name[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold">
                         {typeof comment.user === "string"
                           ? "Unknown User"
@@ -264,6 +285,19 @@ const BlogDetail = () => {
                         {new Date(comment.createdAt).toLocaleDateString()}
                       </p>
                     </div>
+                    {user?._id ===
+                      (typeof comment.user === "string"
+                        ? comment.user
+                        : comment.user._id) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteComment(comment._id)}
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </InfiniteScroll>

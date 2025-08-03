@@ -57,4 +57,20 @@ export class CommentController {
     res.locals.response = response;
     res.status(response.status).json(response);
   }
+
+  async deleteComment(
+    req: AuthRequest & { params: { blogId: string; commentId: string } },
+    res: Response
+  ): Promise<void> {
+    const { blogId, commentId } = req.params;
+    console.log("Comment Controller: deleteComment called", { blogId, commentId });
+    const userId = req.user!.id;
+    const response = await this.commentService.deleteComment(
+      blogId,
+      commentId,
+      userId
+    );
+    res.locals.response = response;
+    res.status(response.status).json(response);
+  }
 }

@@ -13,7 +13,7 @@ const commentController = new CommentController();
 const likeController = new LikeController();
 
 const blogLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -26,8 +26,8 @@ const blogLimiter = rateLimit({
 });
 
 const commentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 20, 
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -64,6 +64,43 @@ router.post(
 
 router.get("/", blogController.getBlogs.bind(blogController));
 
+router.delete(
+  "/delete/:blogId/comment/:commentId",
+  authMiddleware,
+  commentController.deleteComment.bind(
+    commentController
+  ) as unknown as RequestHandler
+);
+
+router.post(
+  "/:id/comment",
+  authMiddleware,
+  commentLimiter,
+  [check("content").notEmpty().withMessage("Comment content is required")],
+  commentController.createComment.bind(
+    commentController
+  ) as unknown as RequestHandler
+);
+
+router.get(
+  "/:id/comments",
+  commentController.getComments.bind(
+    commentController
+  ) as unknown as RequestHandler
+);
+
+router.post(
+  "/:id/like",
+  authMiddleware,
+  likeLimiter,
+  likeController.toggleLike.bind(likeController) as unknown as RequestHandler
+);
+
+router.get(
+  "/:id/likes",
+  likeController.getLikes.bind(likeController) as unknown as RequestHandler
+);
+
 router.get("/:id", blogController.getBlog.bind(blogController));
 
 router.put(
@@ -82,31 +119,6 @@ router.delete(
   authMiddleware,
   blogLimiter,
   blogController.deleteBlog.bind(blogController) as unknown as RequestHandler
-);
-
-router.post(
-  "/:id/comment",
-  authMiddleware,
-  commentLimiter,
-  [check("content").notEmpty().withMessage("Comment content is required")],
-  commentController.createComment.bind(commentController) as unknown as RequestHandler
-);
-
-router.get(
-  "/:id/comments",
-  commentController.getComments.bind(commentController) as unknown as RequestHandler
-);
-
-router.post(
-  "/:id/like",
-  authMiddleware,
-  likeLimiter,
-  likeController.toggleLike.bind(likeController) as unknown as RequestHandler
-);
-
-router.get(
-  "/:id/likes",
-  likeController.getLikes.bind(likeController) as unknown as RequestHandler
 );
 
 export default router;

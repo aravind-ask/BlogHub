@@ -55,4 +55,11 @@ export const blogService = {
     );
     return response.data;
   },
+  deleteComment: async (
+    blogId: string | undefined,
+    commentId: string
+  ): Promise<BlogResponse> => {
+    const response = await api.delete(`/blogs/delete/${blogId}/comment/${commentId}`);
+    return response.data;
+  },
 };
