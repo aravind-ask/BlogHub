@@ -24,9 +24,17 @@ const blogSlice = createSlice({
   initialState,
   reducers: {
     setBlogs: (state, action: PayloadAction<Blog[]>) => {
-      state.blogs = [...state.blogs, ...action.payload];
-      state.hasMore = action.payload.length > 0;
-      state.page += 1;
+      // Deduplicate blogs by _id
+      const newBlogs = action.payload.filter(
+        (newBlog) => !state.blogs.some((blog) => blog._id === newBlog._id)
+      );
+      state.blogs = [...state.blogs, ...newBlogs];
+      if (newBlogs.length > 0) {
+        state.page += 1;
+      }
+    },
+    setHasMore: (state, action: PayloadAction<boolean>) => {
+      state.hasMore = action.payload;
     },
     setCurrentBlog: (state, action: PayloadAction<Blog>) => {
       state.currentBlog = action.payload;
@@ -55,6 +63,7 @@ const blogSlice = createSlice({
 
 export const {
   setBlogs,
+  setHasMore,
   setCurrentBlog,
   updateBlog,
   resetBlogs,

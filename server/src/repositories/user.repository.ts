@@ -4,8 +4,8 @@ import UserModel from "../models/user.model";
 import { IUser } from "../interfaces/user.interface";
 
 export class UserRepository extends BaseRepository<IUser> {
-  constructor() {
-    super(UserModel);
+  constructor(model: Model<IUser> = UserModel) {
+    super(model);
   }
 
   async findByEmail(email: string): Promise<IUser | null> {
@@ -13,32 +13,33 @@ export class UserRepository extends BaseRepository<IUser> {
   }
 
   async getProfile(id: string): Promise<IUser | null> {
-    return this.model.findById(id).populate("savedBlogs").exec();
+    return this.model.findById(id).exec();
   }
 
-  async saveBlog(
-    userId: string,
-    blogId: Types.ObjectId
-  ): Promise<IUser | null> {
+  async addRefreshToken(userId: string, token: string): Promise<IUser | null> {
     return this.model
       .findByIdAndUpdate(
         userId,
-        { $addToSet: { savedBlogs: blogId } },
+        { $addToSet: { refreshTokens: token } },
         { new: true }
       )
       .exec();
   }
 
-  async unsaveBlog(
+  async removeRefreshToken(
     userId: string,
-    blogId: Types.ObjectId
+    token: string
   ): Promise<IUser | null> {
     return this.model
       .findByIdAndUpdate(
         userId,
-        { $pull: { savedBlogs: blogId } },
+        { $pull: { refreshTokens: token } },
         { new: true }
       )
       .exec();
+  }
+
+  async findByRefreshToken(token: string): Promise<IUser | null> {
+    return this.model.findOne({ refreshTokens: token }).exec();
   }
 }

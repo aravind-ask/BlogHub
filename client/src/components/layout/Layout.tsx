@@ -1,16 +1,33 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { logout } from '../../features/auth/authSlice';
-import { Button } from '../ui/button';
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { authService } from "../../services/authService";
+import { logout } from "../../features/auth/authSlice";
+import { Button } from "../ui/button";
+import AuthDebug from "../common/AuthDebug";
+import BlogDebug from "../common/BlogDebug";
+import toast from "react-hot-toast";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
+  const { refreshToken } = useAppSelector((state) => state.auth);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      const response = await authService.logout();
+      if (!response.success) {
+        console.error(
+          `Logout failed with status ${response.status}: ${response.error}`
+        );
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      dispatch(logout());
+      toast.success("Logged out successfully!");
+      navigate("/login");
+    }
   };
 
   return (
@@ -52,6 +69,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           &copy; 2025 BlogHub. All rights reserved.
         </div>
       </footer>
+      <AuthDebug />
+      <BlogDebug />
     </div>
   );
 };

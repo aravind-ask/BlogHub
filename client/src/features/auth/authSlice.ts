@@ -1,36 +1,85 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { User } from "../../types/auth";
+import { User, AuthTokens } from "../../types/auth";
+import Cookies from "js-cookie";
 
 interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   error: string | null;
 }
 
-const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem("token"),
-  isLoading: false,
-  error: null,
+// Initialize state from cookies
+const getInitialState = (): AuthState => {
+  // Only try to get cookies if we're in a browser environment
+  let accessToken = null;
+  let refreshToken = null;
+  
+  try {
+    accessToken = Cookies.get("accessToken");
+    refreshToken = Cookies.get("refreshToken");
+  } catch (error) {
+    console.log("Could not read cookies during initialization:", error);
+  }
+  
+  return {
+    user: null,
+    token: accessToken || null,
+    refreshToken: refreshToken || null,
+    isLoading: false,
+    error: null,
+  };
 };
 
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: getInitialState(),
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{
+        user?: User;
+        accessToken: string;
+        refreshToken: string;
+      }>
     ) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      localStorage.setItem("token", action.payload.token);
+      state.user = action.payload.user || state.user;
+      state.token = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.error = null; // Clear error on successful credential set
+
+      // Set cookies for tokens
+      if (action.payload.accessToken) {
+        Cookies.set("accessToken", action.payload.accessToken, {
+          expires: 1 / 96, // 15 minutes
+          sameSite: "strict",
+          secure: import.meta.env.MODE === "production",
+          path: "/",
+        });
+      }
+      if (action.payload.refreshToken) {
+        Cookies.set("refreshToken", action.payload.refreshToken, {
+          expires: 7, // 7 days
+          sameSite: "strict",
+          secure: import.meta.env.MODE === "production",
+          path: "/",
+        });
+      }
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.error = null;
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem("token");
+      state.refreshToken = null;
+      state.error = null;
+
+      // Clear cookies
+      Cookies.remove("accessToken", { path: "/" });
+      Cookies.remove("refreshToken", { path: "/" });
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
@@ -41,6 +90,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setLoading, setError } =
+export const { setCredentials, setUser, logout, setLoading, setError } =
   authSlice.actions;
 export default authSlice.reducer;

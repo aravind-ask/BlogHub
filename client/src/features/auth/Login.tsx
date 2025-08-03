@@ -1,99 +1,62 @@
-import { useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { setCredentials, setLoading, setError } from "./authSlice";
-import { authService } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import { LoginFormData } from "../../types/auth";
-import jwtDecode from "jwt-decode";
+import { useAppDispatch } from "../../store/hooks";
+import { setCredentials } from "./authSlice";
+import { authService } from "../../services/authService";
+import AuthForm from "../../components/common/AuthForm";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
-    password: "",
-  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleSubmit = async (formData: Record<string, string>) => {
+    console.log("Login: Starting login process");
+    const loginResponse = await authService.login({
+      email: formData.email,
+      password: formData.password,
+    });
+    console.log("Login: Login response", loginResponse);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch(setLoading(true));
-    dispatch(setError(null));
+    if (loginResponse.success && loginResponse.data) {
+      console.log("Login: Login successful, getting user data");
+      const userResponse = await authService.getCurrentUser();
+      console.log("Login: User response", userResponse);
 
-    try {
-      const response = await authService.login(formData);
-      if (response.success && response.data) {
-        const decoded: { id: string; role: string } = jwtDecode(response.data);
+      if (userResponse.success && userResponse.data) {
+        console.log("Login: Setting credentials");
         dispatch(
           setCredentials({
-            user: {
-              _id: decoded.id,
-              email: formData.email,
-              name: "",
-              role: decoded.role,
-            },
-            token: response.data,
+            user: userResponse.data,
+            accessToken: loginResponse.data.accessToken,
+            refreshToken: loginResponse.data.refreshToken,
           })
         );
+        console.log("Login: Navigating to home");
+        toast.success("Login successful! Welcome back!");
         navigate("/");
       } else {
-        dispatch(setError(response.error || "Login failed"));
+        throw new Error(
+          userResponse.error ||
+            `Login failed with status ${userResponse.status}`
+        );
       }
-    } catch (err) {
-      dispatch(setError("An error occurred"));
-    } finally {
-      dispatch(setLoading(false));
+    } else {
+      throw new Error(
+        loginResponse.error ||
+          `Login failed with status ${loginResponse.status}`
+      );
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            {error && <p className="text-red-500">{error}</p>}
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Loading..." : "Login"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthForm
+      title="Login"
+      fields={[
+        { name: "email", type: "email", placeholder: "Email" },
+        { name: "password", type: "password", placeholder: "Password" },
+      ]}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

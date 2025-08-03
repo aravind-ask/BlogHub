@@ -1,8 +1,9 @@
-import api from "./api";
+import { api } from "./api";
 import {
   BlogResponse,
   CreateBlogFormData,
   UpdateBlogFormData,
+  CommentFormData,
 } from "../types/blog";
 
 export const blogService = {
@@ -33,8 +34,25 @@ export const blogService = {
     const response = await api.post(`/blogs/${id}/like`);
     return response.data;
   },
-  commentBlog: async (id: string, content: string): Promise<BlogResponse> => {
-    const response = await api.post(`/blogs/${id}/comment`, { content });
+  getLikes: async (id: string): Promise<BlogResponse> => {
+    const response = await api.get(`/blogs/${id}/likes`);
+    return response.data;
+  },
+  commentBlog: async (
+    id: string,
+    data: CommentFormData
+  ): Promise<BlogResponse> => {
+    const response = await api.post(`/blogs/${id}/comment`, data);
+    return response.data;
+  },
+  getComments: async (
+    id: string,
+    page: number,
+    limit: number
+  ): Promise<BlogResponse> => {
+    const response = await api.get(
+      `/blogs/${id}/comments?page=${page}&limit=${limit}`
+    );
     return response.data;
   },
 };

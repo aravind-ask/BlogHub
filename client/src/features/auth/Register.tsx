@@ -1,105 +1,67 @@
-import { useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setCredentials, setLoading, setError } from './authSlice';
-import { authService } from '../../services/authService';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { RegisterFormData } from '../../types/auth';
-import jwtDecode from 'jwt-decode';
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../../store/hooks";
+import { setCredentials } from "./authSlice";
+import { authService } from "../../services/authService";
+import AuthForm from "../../components/common/AuthForm";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
-  const [formData, setFormData] = useState<RegisterFormData>({
-    email: '',
-    password: '',
-    name: '',
-  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch(setLoading(true));
-    dispatch(setError(null));
-
-    try {
-      const response = await authService.register(formData);
-      if (response.success && response.data) {
-        const decoded: { id: string; role: string } = jwtDecode(response.data);
-        dispatch(
-          setCredentials({
-            user: {
-              _id: decoded.id,
-              email: formData.email,
-              name: formData.name,
-              role: decoded.role,
-            },
-            token: response.data,
-          })
-        );
-        navigate('/');
+  const handleSubmit = async (formData: Record<string, string>) => {
+    const registerResponse = await authService.register({
+      email: formData.email,
+      password: formData.password,
+      name: formData.name,
+    });
+    if (registerResponse.success && registerResponse.data) {
+      const loginResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+      if (loginResponse.success && loginResponse.data) {
+        const userResponse = await authService.getCurrentUser();
+        if (userResponse.success && userResponse.data) {
+          dispatch(
+            setCredentials({
+              user: userResponse.data,
+              accessToken: loginResponse.data.accessToken,
+              refreshToken: loginResponse.data.refreshToken,
+            })
+          );
+          toast.success("Registration successful! Welcome to BlogHub!");
+          navigate("/");
+        } else {
+          throw new Error(
+            userResponse.error ||
+              `Failed to fetch user with status ${userResponse.status}`
+          );
+        }
       } else {
-        dispatch(setError(response.error || 'Registration failed'));
+        throw new Error(
+          loginResponse.error ||
+            `Login failed with status ${loginResponse.status}`
+        );
       }
-    } catch (err) {
-      dispatch(setError('An error occurred'));
-    } finally {
-      dispatch(setLoading(false));
+    } else {
+      throw new Error(
+        registerResponse.error ||
+          `Registration failed with status ${registerResponse.status}`
+      );
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Register</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                name="name"
-                placeholder="Name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            {error && <p className="text-red-500">{error}</p>}
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? 'Loading...' : 'Register'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthForm
+      title="Register"
+      fields={[
+        { name: "name", type: "text", placeholder: "Name" },
+        { name: "email", type: "email", placeholder: "Email" },
+        { name: "password", type: "password", placeholder: "Password" },
+      ]}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

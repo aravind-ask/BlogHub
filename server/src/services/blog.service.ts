@@ -1,14 +1,29 @@
 import { Types } from "mongoose";
 import { BlogRepository } from "../repositories/blog.repository";
+import { CommentRepository } from "../repositories/comment.repository";
+import { LikeRepository } from "../repositories/like.repository";
+import { SavedBlogRepository } from "../repositories/savedBlogs.repository";
 import { IBlog } from "../interfaces/blog.interface";
-import { IResponse } from "../interfaces/response.interface";
+import { ResponseHandler } from "../utils/response.handler";
 import { HttpStatus, ErrorMessage } from "../constants/enums";
+import { IResponse } from "../interfaces/response.interface";
 
 export class BlogService {
   private blogRepository: BlogRepository;
+  private commentRepository: CommentRepository;
+  private likeRepository: LikeRepository;
+  private savedBlogRepository: SavedBlogRepository;
 
-  constructor() {
-    this.blogRepository = new BlogRepository();
+  constructor(
+    blogRepository: BlogRepository = new BlogRepository(),
+    commentRepository: CommentRepository = new CommentRepository(),
+    likeRepository: LikeRepository = new LikeRepository(),
+    savedBlogRepository: SavedBlogRepository = new SavedBlogRepository()
+  ) {
+    this.blogRepository = blogRepository;
+    this.commentRepository = commentRepository;
+    this.likeRepository = likeRepository;
+    this.savedBlogRepository = savedBlogRepository;
   }
 
   async createBlog(
@@ -18,34 +33,48 @@ export class BlogService {
   ): Promise<IResponse<IBlog>> {
     try {
       const blog = await this.blogRepository.create({ title, content, author });
-      return {
-        success: true,
-        message: "Blog created successfully",
-        data: blog,
-      };
+      return ResponseHandler.success(
+        blog,
+        "Blog created successfully",
+        HttpStatus.CREATED
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   async getBlogs(page: number, limit: number): Promise<IResponse<IBlog[]>> {
     try {
+      console.log("Blog Service: getBlogs called", { page, limit });
       const blogs = await this.blogRepository.findAllPaginated(page, limit);
-      return {
-        success: true,
-        message: "Blogs fetched successfully",
-        data: blogs,
-      };
+      const totalBlogs = await this.blogRepository.countBlogs();
+      const hasMore = blogs.length > 0 && page * limit < totalBlogs;
+      
+      console.log("Blog Service: getBlogs result", { 
+        blogsLength: blogs.length, 
+        totalBlogs, 
+        hasMore,
+        page,
+        limit 
+      });
+
+      return ResponseHandler.success(
+        blogs,
+        "Blogs fetched successfully",
+        HttpStatus.OK,
+        hasMore
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      console.log("Blog Service: getBlogs error", error);
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -53,23 +82,23 @@ export class BlogService {
     try {
       const blog = await this.blogRepository.findById(id);
       if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.NOT_FOUND,
+          "Blog not found",
+          HttpStatus.NOT_FOUND
+        );
       }
-      return {
-        success: true,
-        message: "Blog fetched successfully",
-        data: blog,
-      };
+      return ResponseHandler.success(
+        blog,
+        "Blog fetched successfully",
+        HttpStatus.OK
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -82,34 +111,34 @@ export class BlogService {
     try {
       const blog = await this.blogRepository.findById(id);
       if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.NOT_FOUND,
+          "Blog not found",
+          HttpStatus.NOT_FOUND
+        );
       }
       if (blog.author.toString() !== userId.toString()) {
-        return {
-          success: false,
-          message: ErrorMessage.FORBIDDEN,
-          error: "Not authorized to update this blog",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.FORBIDDEN,
+          "Not authorized to update this blog",
+          HttpStatus.FORBIDDEN
+        );
       }
       const updatedBlog = await this.blogRepository.update(id, {
         title,
         content,
       });
-      return {
-        success: true,
-        message: "Blog updated successfully",
-        data: updatedBlog!,
-      };
+      return ResponseHandler.success(
+        updatedBlog!,
+        "Blog updated successfully",
+        HttpStatus.OK
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -120,78 +149,34 @@ export class BlogService {
     try {
       const blog = await this.blogRepository.findById(id);
       if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.NOT_FOUND,
+          "Blog not found",
+          HttpStatus.NOT_FOUND
+        );
       }
       if (blog.author.toString() !== userId.toString()) {
-        return {
-          success: false,
-          message: ErrorMessage.FORBIDDEN,
-          error: "Not authorized to delete this blog",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.FORBIDDEN,
+          "Not authorized to delete this blog",
+          HttpStatus.FORBIDDEN
+        );
       }
       await this.blogRepository.delete(id);
-      return { success: true, message: "Blog deleted successfully" };
+      await this.commentRepository.deleteByBlog(id);
+      await this.likeRepository.deleteByBlog(id);
+      await this.savedBlogRepository.deleteByBlog(id);
+      return ResponseHandler.success(
+        null,
+        "Blog deleted successfully",
+        HttpStatus.OK
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
-    }
-  }
-
-  async likeBlog(
-    id: string,
-    userId: Types.ObjectId
-  ): Promise<IResponse<IBlog>> {
-    try {
-      const blog = await this.blogRepository.addLike(id, userId);
-      if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
-      }
-      return { success: true, message: "Blog liked successfully", data: blog };
-    } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
-    }
-  }
-
-  async commentBlog(
-    id: string,
-    userId: Types.ObjectId,
-    content: string
-  ): Promise<IResponse<IBlog>> {
-    try {
-      const blog = await this.blogRepository.addComment(id, userId, content);
-      if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
-      }
-      return {
-        success: true,
-        message: "Comment added successfully",
-        data: blog,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

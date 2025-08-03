@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { setCurrentBlog, updateBlog, setLoading, setError } from "./blogSlice";
 import { blogService } from "../../services/blogService";
+import toast from "react-hot-toast";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import {
@@ -24,6 +25,22 @@ const CreateBlog = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState({ title: "", content: "" });
 
+  const getErrorMessage = (error: string | null, status?: number) => {
+    if (!error) return "An error occurred";
+    switch (status) {
+      case 400:
+        return "Invalid input. Please check your details.";
+      case 401:
+        return "Please log in to perform this action.";
+      case 403:
+        return "You are not authorized to perform this action.";
+      case 429:
+        return "Too many requests. Please try again later.";
+      default:
+        return error;
+    }
+  };
+
   useEffect(() => {
     if (id) {
       const fetchBlog = async () => {
@@ -37,10 +54,14 @@ const CreateBlog = () => {
               content: (response.data as any).content,
             });
           } else {
-            dispatch(setError(response.error || "Failed to fetch blog"));
+            dispatch(
+              setError(getErrorMessage(response.error, response.status))
+            );
           }
-        } catch (err) {
-          dispatch(setError("An error occurred"));
+        } catch (err: any) {
+          dispatch(
+            setError(getErrorMessage(err.error || err.message, err.status))
+          );
         } finally {
           dispatch(setLoading(false));
         }
@@ -62,12 +83,17 @@ const CreateBlog = () => {
         : await blogService.createBlog(formData);
       if (response.success && response.data) {
         dispatch(updateBlog(response.data as any));
+        toast.success(id ? "Blog updated successfully!" : "Blog created successfully!");
         navigate(`/blog/${(response.data as any)._id}`);
       } else {
-        dispatch(setError(response.error || "Failed to save blog"));
+        const errorMessage = getErrorMessage(response.error, response.status);
+        dispatch(setError(errorMessage));
+        toast.error(errorMessage);
       }
-    } catch (err) {
-      dispatch(setError("An error occurred"));
+    } catch (err: any) {
+      const errorMessage = getErrorMessage(err.error || err.message, err.status);
+      dispatch(setError(errorMessage));
+      toast.error(errorMessage);
     } finally {
       dispatch(setLoading(false));
     }
@@ -98,6 +124,14 @@ const CreateBlog = () => {
               theme="snow"
               value={formData.content}
               onChange={(content) => setFormData({ ...formData, content })}
+              modules={{
+                toolbar: [
+                  [{ header: [1, 2, false] }],
+                  ["bold", "italic"],
+                  ["link"],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                ],
+              }}
             />
             {error && <p className="text-red-500">{error}</p>}
             <Button type="submit" disabled={isLoading}>

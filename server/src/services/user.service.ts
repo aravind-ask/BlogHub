@@ -3,147 +3,85 @@ import { BlogRepository } from "../repositories/blog.repository";
 import { IResponse } from "../interfaces/response.interface";
 import { IUser } from "../interfaces/user.interface";
 import { IBlog } from "../interfaces/blog.interface";
-import { Types } from "mongoose";
 import { HttpStatus, ErrorMessage } from "../constants/enums";
+import { ResponseHandler } from "../utils/response.handler";
+import { SavedBlogService } from "./savedBlog.service";
 
 export class UserService {
   private userRepository: UserRepository;
   private blogRepository: BlogRepository;
 
-  constructor() {
-    this.userRepository = new UserRepository();
-    this.blogRepository = new BlogRepository();
+  constructor(
+    userRepository: UserRepository = new UserRepository(),
+    blogRepository: BlogRepository = new BlogRepository()
+  ) {
+    this.userRepository = userRepository;
+    this.blogRepository = blogRepository;
   }
 
   async getProfile(id: string): Promise<IResponse<IUser>> {
     try {
       const user = await this.userRepository.getProfile(id);
       if (!user) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "User not found",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.NOT_FOUND,
+          "User not found",
+          HttpStatus.NOT_FOUND
+        );
       }
-      return {
-        success: true,
-        message: "User fetched successfully",
-        data: user,
-      };
+      return ResponseHandler.success(
+        user,
+        "User fetched successfully",
+        HttpStatus.OK
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   async getUserBlogs(id: string): Promise<IResponse<IBlog[]>> {
     try {
       const blogs = await this.blogRepository.getUserBlogs(id);
-      return {
-        success: true,
-        message: "Blogs fetched successfully",
-        data: blogs,
-      };
+      return ResponseHandler.success(
+        blogs,
+        "Blogs fetched successfully",
+        HttpStatus.OK
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  // async getSavedBlogs(id: string): Promise<IResponse<IBlog[]>> {
-  //   try {
-  //     const user = await this.userRepository.findById(id);
-  //     if (!user) {
-  //       return {
-  //         success: false,
-  //         message: ErrorMessage.NOT_FOUND,
-  //         error: "User not found",
-  //       };
-  //     }
-  //     const blogs = await this.blogRepository.findAll();
-  //     return {
-  //       success: true,
-  //       message: "Saved blogs fetched successfully",
-  //       data: blogs,
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       message: ErrorMessage.SERVER_ERROR,
-  //       error: (error as Error).message,
-  //     };
-  //   }
-  // }
-
-  async saveBlog(userId: string, blogId: string): Promise<IResponse<IUser>> {
+  async getSavedBlogs(
+    id: string,
+    page: number,
+    limit: number
+  ): Promise<IResponse<IBlog[]>> {
     try {
-      const blog = await this.blogRepository.findById(blogId);
-      if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
-      }
-      const user = await this.userRepository.saveBlog(
-        userId,
-        new Types.ObjectId(blogId)
-      );
+      const user = await this.userRepository.findById(id);
       if (!user) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "User not found",
-        };
+        return ResponseHandler.error(
+          ErrorMessage.NOT_FOUND,
+          "User not found",
+          HttpStatus.NOT_FOUND
+        );
       }
-      return { success: true, message: "Blog saved successfully", data: user };
+      const savedBlogService = new SavedBlogService();
+      return await savedBlogService.getSavedBlogs(id, page, limit);
     } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
-    }
-  }
-
-  async unsaveBlog(userId: string, blogId: string): Promise<IResponse<IUser>> {
-    try {
-      const blog = await this.blogRepository.findById(blogId);
-      if (!blog) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "Blog not found",
-        };
-      }
-      const user = await this.userRepository.unsaveBlog(
-        userId,
-        new Types.ObjectId(blogId)
+      return ResponseHandler.error(
+        ErrorMessage.SERVER_ERROR,
+        error instanceof Error ? error.message : "Unknown error",
+        HttpStatus.INTERNAL_SERVER_ERROR
       );
-      if (!user) {
-        return {
-          success: false,
-          message: ErrorMessage.NOT_FOUND,
-          error: "User not found",
-        };
-      }
-      return {
-        success: true,
-        message: "Blog unsaved successfully",
-        data: user,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: ErrorMessage.SERVER_ERROR,
-        error: (error as Error).message,
-      };
     }
   }
 }

@@ -3,14 +3,29 @@ export interface User {
   email: string;
   name: string;
   role: string;
-  savedBlogs: string[];
 }
 
-export interface AuthResponse {
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface IResponse<T> {
   success: boolean;
   message: string;
-  data?: string | User; // JWT token or User object
+  data?: T;
   error?: string;
+  status: number;
+  hasMore?: boolean;
+}
+
+export interface UserResponse {
+  success: boolean;
+  message: string;
+  data?: User | null;
+  error?: string;
+  status: number;
 }
 
 export interface RegisterFormData {
@@ -22,11 +37,4 @@ export interface RegisterFormData {
 export interface LoginFormData {
   email: string;
   password: string;
-}
-
-export interface UserResponse {
-  success: boolean;
-  message: string;
-  data?: User;
-  error?: string;
 }

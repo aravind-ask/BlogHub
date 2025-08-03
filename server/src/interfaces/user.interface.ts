@@ -7,5 +7,5 @@ export interface IUser extends Document {
   password?: string;
   name: string;
   role: Role;
-  savedBlogs: Types.ObjectId[];
+  refreshTokens: string[];
 }

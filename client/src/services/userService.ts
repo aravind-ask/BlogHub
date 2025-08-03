@@ -1,4 +1,4 @@
-import api from "./api";
+import {api} from "./api";
 import { UserResponse } from "../types/auth";
 import { BlogResponse } from "../types/blog";
 
@@ -11,11 +11,21 @@ export const userService = {
     const response = await api.get(`/users/${id}/blogs`);
     return response.data;
   },
-  saveBlog: async (blogId: string): Promise<UserResponse> => {
+  getSavedBlogs: async (
+    id: string,
+    page: number,
+    limit: number
+  ): Promise<BlogResponse> => {
+    const response = await api.get(
+      `/users/${id}/saved-blogs?page=${page}&limit=${limit}`
+    );
+    return response.data;
+  },
+  saveBlog: async (blogId: string): Promise<BlogResponse> => {
     const response = await api.post(`/users/save-blog/${blogId}`);
     return response.data;
   },
-  unsaveBlog: async (blogId: string): Promise<UserResponse> => {
+  unsaveBlog: async (blogId: string): Promise<BlogResponse> => {
     const response = await api.post(`/users/unsave-blog/${blogId}`);
     return response.data;
   },
