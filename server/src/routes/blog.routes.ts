@@ -12,10 +12,9 @@ const blogController = new BlogController();
 const commentController = new CommentController();
 const likeController = new LikeController();
 
-// Rate limiter for blog creation and updates
 const blogLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per window
+  windowMs: 15 * 60 * 1000, 
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -26,10 +25,9 @@ const blogLimiter = rateLimit({
   },
 });
 
-// Rate limiter for comments
 const commentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each IP to 20 comments per window
+  windowMs: 15 * 60 * 1000, 
+  max: 20, 
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -40,10 +38,9 @@ const commentLimiter = rateLimit({
   },
 });
 
-// Rate limiter for likes
 const likeLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 likes per window
+  windowMs: 15 * 60 * 1000,
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

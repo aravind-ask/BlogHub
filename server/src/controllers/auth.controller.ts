@@ -72,23 +72,21 @@ export class AuthController {
     const { email, password } = req.body;
     const response = await this.authService.login(email, password);
     if (response.success && response.data) {
-      // Set cookies that can be accessed by client-side JavaScript
       res.cookie("accessToken", response.data.accessToken, {
-        httpOnly: false, // Allow JavaScript access
-        secure: false, // Allow HTTP in development
+        httpOnly: false,
+        secure: false, 
         sameSite: "lax",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000, 
         path: "/",
       });
       res.cookie("refreshToken", response.data.refreshToken, {
-        httpOnly: false, // Allow JavaScript access
-        secure: false, // Allow HTTP in development
+        httpOnly: false,
+        secure: false, 
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/",
       });
 
-      // Also include tokens in response body for client-side access
       response.data = {
         ...response.data,
         accessToken: response.data.accessToken,
@@ -116,7 +114,6 @@ export class AuthController {
       return;
     }
 
-    // Read refreshToken from request body or cookies
     const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
 
     if (!refreshToken) {
@@ -134,17 +131,14 @@ export class AuthController {
 
     const response = await this.authService.refreshToken(refreshToken);
     if (response.success && response.data) {
-      // Set cookies that can be accessed by client-side JavaScript
       res.cookie("accessToken", response.data.accessToken, {
-        httpOnly: false, // Allow JavaScript access
-        secure: false, // Allow HTTP in development
+        httpOnly: false,
+        secure: false,
         sameSite: "lax",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000, 
         path: "/",
       });
-      // No need to update refreshToken cookie unless it's rotated
 
-      // Also include tokens in response body for client-side access
       response.data = {
         ...response.data,
         accessToken: response.data.accessToken,
@@ -170,7 +164,6 @@ export class AuthController {
     }
 
     const userId = req.user!.id;
-    // Get refresh token from cookies or request body
     const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
     const response = await this.authService.logout(userId, refreshToken);
     if (response.success) {

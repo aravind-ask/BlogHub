@@ -16,11 +16,9 @@ export interface AuthRequest extends Request {
 export const authMiddleware: RequestHandler = (req, res, next) => {
   const authReq = req as AuthRequest;
 
-  // Try to get token from Authorization header first, then from cookies
   let token = req.headers.authorization?.replace("Bearer ", "");
 
   if (!token) {
-    // Try to get from cookies
     token = req.cookies?.accessToken;
   }
 
