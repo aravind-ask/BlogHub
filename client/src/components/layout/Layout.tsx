@@ -3,8 +3,8 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { authService } from "../../services/authService";
 import { logout } from "../../features/auth/authSlice";
 import { Button } from "../ui/button";
-import AuthDebug from "../common/AuthDebug";
-import BlogDebug from "../common/BlogDebug";
+// import AuthDebug from "../common/AuthDebug";
+// import BlogDebug from "../common/BlogDebug";
 import toast from "react-hot-toast";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -69,8 +69,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           &copy; 2025 BlogHub. All rights reserved.
         </div>
       </footer>
-      <AuthDebug />
-      <BlogDebug />
+      {/* <AuthDebug /> */}
+      {/* <BlogDebug /> */}
     </div>
   );
 };
