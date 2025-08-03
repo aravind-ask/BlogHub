@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "A full-stack blog application",
   "scripts": {
-    "postinstall": "cd client && npm install && cd ../server && npm install",
-    "start": "cd client && npm start & cd ../server && npm start",
-    "dev": "cd client && npm run dev & cd ../server && npm run dev"
+    "build": "npm install && npm install --prefix client && npm run build --prefix client",
+    "start": "node server/dist/index.js"
   },
   "author": "",
   "license": "MIT"
