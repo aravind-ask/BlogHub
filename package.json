@@ -1,0 +1,12 @@
+{
+  "name": "bloghub",
+  "version": "1.0.0",
+  "description": "A full-stack blog application",
+  "scripts": {
+    "postinstall": "cd client && npm install && cd ../server && npm install",
+    "start": "cd client && npm start & cd ../server && npm start",
+    "dev": "cd client && npm run dev & cd ../server && npm run dev"
+  },
+  "author": "",
+  "license": "MIT"
+}
